@@ -1,0 +1,28 @@
+# secrets
+.env
+*.env
+application-local.yml
+
+# build output
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log
+
+logs/
+!backend/src/main/resources/application.yml
+!backend/src/main/resources/application-prod.yml
