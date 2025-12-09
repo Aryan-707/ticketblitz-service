@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: TicketBlitz
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ticketing_db_s59y}
+    username: ${DB_USERNAME:ticketing_db_s59y_user}
+    password: ${DB_PASSWORD:password}
+    hikari:
+      # hikari pool size tuned for free tier DB limits
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      expiration: 86400000
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [%X{bookingId}] %msg%n"

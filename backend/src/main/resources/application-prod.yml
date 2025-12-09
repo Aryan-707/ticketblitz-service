@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    show-sql: false
+  datasource:
+    # Requires DB_URL, DB_USERNAME, DB_PASSWORD from env vars
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 2
+  data:
+    redis:
+      # Requires REDIS_HOST, REDIS_PORT, REDIS_PASSWORD from env
+      ssl: true
