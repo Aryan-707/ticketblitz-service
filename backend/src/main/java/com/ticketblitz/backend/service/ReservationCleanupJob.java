@@ -21,11 +21,13 @@ public class ReservationCleanupJob {
     private final SeatRepository seatRepository;
     private final OrderRepository orderRepository;
     private final StringRedisTemplate redisTemplate;
+    private final WaitlistService waitlistService;
 
     // Mod 4: Scheduled job every 2 mins to run abandonment cleanup
     @Scheduled(fixedRate = 120000)
+    @net.javacrumbs.shedlock.spring.annotation.SchedulerLock(name = "reservationSweeper", lockAtMostFor = "1m", lockAtLeastFor = "30s")
     @Transactional
-    public void cleanupExpiredReservations() {
+    public void cleanupStrandedReservations() {
         // cleanup job filters by both — avoids full table scan
         LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(10);
         List<Seat> expiredSeats = seatRepository.findByStatusAndReservedAtBefore(SeatStatus.RESERVED, expiryTime);
@@ -35,6 +37,13 @@ public class ReservationCleanupJob {
             seat.setStatus(SeatStatus.AVAILABLE);
             seat.setReservedAt(null);
             seatRepository.save(seat);
+
+            // Waitlist Notification: Check if someone is waiting fairly on this seat
+            waitlistService.removeStaleEntries(seat.getId());
+            String nextUser = waitlistService.getNextUser(seat.getId());
+            if (nextUser != null) {
+                System.out.println("📨 [MOCK NOTIFY] Waitlist: Seat " + seat.getId() + " is now free. Notifying user " + nextUser);
+            }
 
             List<Order> relatedOrders = orderRepository.findBySeatIdAndStatus(seat.getId(), BookingStatus.RESERVED);
             for (Order order : relatedOrders) {

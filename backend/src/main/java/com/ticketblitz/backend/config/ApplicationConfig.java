@@ -12,9 +12,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+import net.javacrumbs.shedlock.provider.redis.spring.RedisLockProvider;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableSchedulerLock(defaultLockAtMostFor = "1m")
 public class ApplicationConfig {
 
     private final UserRepository repository;
@@ -42,5 +46,11 @@ public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // ShedLock uniquely guarantees that if we deploy 5 App instances, ONLY ONE instance executes the cron job natively locking across Redis.
+    @Bean
+    public net.javacrumbs.shedlock.core.LockProvider lockProvider(RedisConnectionFactory connectionFactory) {
+        return new RedisLockProvider(connectionFactory, "ticketblitz_cron_locks");
     }
 }

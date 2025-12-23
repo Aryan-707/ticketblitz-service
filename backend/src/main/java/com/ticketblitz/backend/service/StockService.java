@@ -11,6 +11,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -26,6 +29,9 @@ public class StockService {
     private final TicketTierRepository ticketTierRepository;
     private final EventRepository eventRepository;
     private final com.ticketblitz.backend.repository.SeatRepository seatRepository;
+    private final RedisLockService redisLockService;
+    private final BookingEventProducer bookingEventProducer;
+    private final MeterRegistry meterRegistry;
 
     // check if it's null so we don't poison redis cache with "event:null:tier:null"
     public void initializeStock(Long eventId, Long tierId, int amount) {
@@ -45,28 +51,20 @@ public class StockService {
     public boolean processPurchase(Long eventId, Long tierId, Long seatId, String userId, String idempotencyKey) {
         if (eventId == null || tierId == null || seatId == null || idempotencyKey == null) return false;
 
-        // Mod 6: Idempotency safety. Let the DB constraint serve as the ultimate truth.
+        Timer bookingLatencyTimer = meterRegistry.timer("ticketblitz_booking_latency_seconds");
+        return bookingLatencyTimer.record(() -> {
+
+            // Mod 6: Idempotency safety. Let the DB constraint serve as the ultimate truth.
         // We first do a SELECT here (and the DB unique constraint on idempotency_key is another safety net).
         if (orderRepository.findByIdempotencyKey(idempotencyKey).isPresent()) {
             System.out.println("🔄 Duplicate idempotent request ignored for user: " + userId);
             return true;
         }
 
-        String lockKey = "seat:lock:" + seatId;
-
-        // Mod 2 & Mod 8: Redis Distributed Lock with Failure Simulation (Option A - CP over AP)
-        Boolean lockAcquired;
-        try {
-            lockAcquired = redisTemplate.opsForValue()
-                    .setIfAbsent(lockKey, userId, 10, java.util.concurrent.TimeUnit.MINUTES);
-        } catch (Exception e) {
-            // Redis unavailable - CP over AP
-            throw new RuntimeException("Redis is unavailable. Taking node down to prevent split brain and overselling.");
-        }
-
-        // TODO: might want to add retry logic here later if Redis is just flapping
-        if (Boolean.FALSE.equals(lockAcquired)) {
+        // Mod 2/8/CircuitBreaker: Resilient atomic lock delegating completely to AOP fallback if SLOW/DOWN
+        if (!redisLockService.acquireSeatLock(seatId, userId)) {
             System.out.println("❌ Lock already acquired for seat: " + seatId);
+            meterRegistry.counter("ticketblitz_redis_lock_failure_total").increment();
             return false;
         }
 
@@ -111,7 +109,19 @@ public class StockService {
 
                 orderRepository.save(newOrder);
 
+                // Publish Event asynchronously. Fire-and-forget logic so HTTP isn't blocked on slow SMTP
+                bookingEventProducer.publishConfirmation(
+                        com.ticketblitz.backend.dto.BookingConfirmedEvent.builder()
+                                .orderId(newOrder.getId())
+                                .seatId(seatId)
+                                .userId(userId)
+                                .eventId(eventId)
+                                .timestamp(LocalDateTime.now())
+                                .build()
+                );
+
                 broadcastStockUpdate(eventId, tierId, remainingStock);
+                meterRegistry.counter("ticketblitz_booking_success_total").increment();
                 return true;
 
             } else {
@@ -121,13 +131,15 @@ public class StockService {
             }
 
         } catch (com.ticketblitz.backend.exception.SeatUnavailableException e) {
-            redisTemplate.delete(lockKey); // release immediately if seat taken
+            redisLockService.releaseLockSafely(seatId); // release immediately if seat taken
             return false;
         } catch (Exception e) {
-            redisTemplate.delete(lockKey);
+            redisLockService.releaseLockSafely(seatId);
+            meterRegistry.counter("ticketblitz_booking_failure_total").increment();
             System.err.println("🚨 TRANSACTION ABORTED: " + e.getMessage());
             throw new RuntimeException("Database rejected the save. Redis lock released.", e);
         }
+        });
     }
 
     // sends websocket payload downstream

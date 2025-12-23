@@ -28,3 +28,46 @@ application:
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [%X{bookingId}] %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus,health,metrics
+  endpoint:
+    prometheus:
+      enabled: true
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20 # supports ~200 concurrent transactions assuming avg 100ms transaction time
+      minimum-idle: 5 # keeps connections warm preventing cold-start lag during flash sales
+      connection-timeout: 3000 # fail fast if DB is unreachable, avoiding ghost threads
+      idle-timeout: 600000 
+      max-lifetime: 1800000 # cycles connections safely preventing stale DB sessions
+      leak-detection-threshold: 5000 # flags long-running uncommitted queries strictly
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false # manual ack for reliability
+      max-poll-records: 10 # backpressure control avoiding memory flood
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+
+resilience4j.circuitbreaker:
+  instances:
+    redisLock:
+      slidingWindowSize: 10
+      failureRateThreshold: 30 # circuit opens after 3 failures in 10s window (30%)
+      waitDurationInOpenState: 10000 # 10s open state bypasses Redis automatically
+      permittedNumberOfCallsInHalfOpenState: 3
