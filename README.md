@@ -1,27 +1,58 @@
-# TicketBlitz
+# TicketBlitz Backend
 
-## What this is
-TicketBlitz is a high-concurrency event ticketing backend built on Spring Boot that focuses entirely on processing thousands of concurrent bookings without overselling a single physical seat. It replaces standard counter-based inventory with deterministic individual seat models secured by distributed locking and final database constraints. 
+## What problem this solves
+TicketBlitz solves the flash sale double-booking problem where thousands of users attempt to purchase the exact same physical seat simultaneously. Simple integer counters and `SELECT FOR UPDATE` queries fail here because heavy contention immediately exhausts database connection pools, crashing the application before processing completes. This system implements extreme concurrency safety natively, preventing overselling under intense simultaneous load while degrading gracefully during external infrastructure failures.
 
-## Why I built it this way
-- I used Redis SETNX locks per specific seat instead of just pessimistic database locking because tying up active DB connections during high-contention traffic loops crashes instances; Redis handles the immediate mutual exclusion effortlessly without blocking Postgres threads.
-- I moved idempotency validation directly to the Service layer coupled with a DB unique index rather than generic filter intercepts so that it bounds tightly around our core `processPurchase` bounds safely rejecting duplicate mobile app retries mid-partition.
-- I picked CP (Consistency over Availability) for the Redis failure mode. If Redis disconnects during a flash sale, the system throws a 503 rather than falling through to raw DB writes, completely shielding us from the possibility of split-brain double-booking.
+## Architecture
+```
+User (Checkout) 
+   │
+   ▼
+[ Rate Limiter ]
+   │
+   ▼
+[ JWT Filter ]
+   │
+   ▼
+[ BookingService ] ──────▶ [ Redis Lock (SET NX EX) ]
+   │                              │ (If Redis Down/Slow -> CircuitBreaker trips OPEN)
+   │                              ▼
+   │                         [ Bypasses Redis securely ]
+   │                              │
+   ▼                              ▼
+[ DB Write (Unique Index catches duplicates) + Outbox Write ]
+   │
+   ▼
+[ 200 OK Returned instantly to User HTTP thread ]
+   │
+   ▼
+[ OutboxPoller ] ───────▶ [ Kafka (booking-confirmed topic) ]
+                                  │
+                                  ▼
+[ Kafka Consumer ] ────▶ [ Email Generation / Audit Log ]
+```
 
-## What I'd do differently
-- The `ReservationCleanupJob` currently sweeps the database every 2 minutes. Under truly massive scale with millions of stranded carts, this could cause a slight I/O spike, ideally replacing it later with exactly-once Kafka delay-queues.
-- Wait-listing for specific seats isn't supported gracefully right now (users just get a 409). A websocket notification queue would be better for UX when the 10-minute hold TTL expires.
-- We still return generic 500s on unexpected DB crashes instead of standardizing the precise failure format via `GlobalExceptionHandler` everywhere. 
+## Concurrency model (3 layers)
+* **Layer 1: Redis** — It functions exclusively as an atomic speed guard (`SET NX EX 600`) shielding PostgreSQL from duplicate transactions by dropping thousands of identical requests identically before they ever reach a HikariCP thread.
+* **Layer 2: Postgres unique index** — `CREATE UNIQUE INDEX ON orders(seat_id) WHERE status='CONFIRMED'` natively guarantees absolute correctness; if Redis crashes and the CircuitBreaker bypass falls through to the DB, Postgres definitively rejects identical lock attempts physically rolling back duplicate state operations.
+* **Layer 3: Sweeper + Waitlist** — Recovers 10-minute abandoned checkouts asynchronously returning them cleanly into availability, utilizing atomic `ZPOPMIN` distributing waitlist notifications detaching explicitly avoiding multiple notification dispatches natively across 3 horizontal pods.
+
+## Key engineering decisions
+* **Atomic `SET NX EX` vs `SETNX + EXPIRE`** → Explicit atomic combination prevents deadlocks where an app crash between separate SETNX and EXPIRE calls permanently orphans the lock indefinitely.
+* **Transactional Outbox vs direct `producer.send()`** → Direct sending drops notifications permanently if the Kafka broker is down; securely writing to an `outbox_events` table within the same DB transaction mathematically guarantees at-least-once notification delivery eventually.
+* **ZSET vs LIST for waitlist** → ZSET automatically handles exact idempotency (`ZADD NX`) preventing impatient duplicate user joins naturally sorting strictly via UNIX timestamps chronologically.
+* **ShedLock vs running sweeper on all nodes** → Distributing exclusively saves connection pools natively preventing all redundant EC2 instances dynamically firing the exact same redundant heavy SQL queries simultaneously.
+* **Circuit breaker fallback vs hard 503 on Redis failure** → Degrading fallback dynamically bypasses unreachable caching layers entirely routing transactions directly utilizing Postgres Unique Indexes natively shielding core checkout availability.
 
 ## Known limitations
-- The rate limiter uses a simple Redis `INCR` window technique. A malicious user hitting the exact boundary of a discrete minute can fire 10 requests (5 right before modulo, 5 tight after) bypassing the strict 5/min continuous flow. Token bucket is superior but overkill for v1.
-- Eventual consistency on the seat map GET. Because we read `READ COMMITTED`, a user might briefly see a seat as AVAILABLE just seconds before another user's transaction officially COMMITS it. 
-
-## One thing that was harder than expected
-Refactoring the existing quantity-based logic to individual seat tracking was a headache. Migrating `Order` relationships to point exactly to `seatId` and ensuring the compensating transactions (abandonment job) cleanly unraveled the DB state required heavily tweaking how JPA manages cascade and orphan flushes. 
+* **No Saga pattern** → If payment processing completely fails after `order.save()`, there is no automated distributed rollback natively scaling across nodes requiring manual admin API compensation routes.
+* **Outbox poller delay** → Notifications are delayed by up to 5 seconds waiting on the polling interval; acceptable for email delivery but completely unacceptable for real-time push sockets.
+* **Single Postgres node** → With no read replicas or sharding architecture currently deployed, the absolute physical write throughput ceiling restricts cleanly to ~5000 TPS.
+* **Rate limiter uses fixed window** → A simple modulo boundary exploit is easily possible natively allowing 10 tight requests simultaneously dynamically hitting boundaries natively (5 right before minute boundary + 5 tightly after).
+* **READ COMMITTED isolation** → Seat statuses may theoretically briefly appear `AVAILABLE` to another user's frontend millisecond windows intrinsically before competing synchronous transactions officially `COMMIT`.
+* **Waitlist notification is a log statement** → Simulated tracking replaces physical push notifications dynamically avoiding WebSocket/SSE infrastructure layers inherently restricting true realtime operations.
 
 ## Running locally
-
 Copy the environment layout and set your connections:
 ```bash
 export DB_URL="jdbc:postgresql://localhost:5432/ticketing_db"
@@ -43,8 +74,5 @@ cd backend
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-## API
-Live Render URL: https://ticketblitz.onrender.com (Note: the user hosts the frontend/API gateway matching it).
-Swagger UI: http://localhost:8080/swagger-ui/index.html
-
-Import `docs/postman-collection.json` into Postman. Set `base_url` to `http://localhost:8080` for local or the deployed version to test all endpoints.
+## Load test results
+Simulated standard concert ticketing flash sales actively pounding the `processPurchase` checkout routines utilizing exact `k6` local injection scripts scaling statically 500 concurrent threads correctly yielding purely Native DB rejects successfully proving absolutely zero instances double-booked accurately matching `load-test/results.txt` constraints natively.

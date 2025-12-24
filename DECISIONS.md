@@ -1,3 +1,5 @@
+**CAP Theorem Tradeoff:** This system is not strictly CP; it is a pragmatic hybrid that degrades Availability at the Redis caching boundary (tripping open on failure to bypass degraded speeds) while exclusively shifting total Consistency burdens down to the absolute PostgreSQL unique constraints natively acting as the final unyielding authority.
+
 ## Individual Seat Tracking over Quantity Counters
 I chose to track inventory via specific `Seat` entities with exact statuses instead of simple quantity counters. I considered just keeping the original integer decrements and adding pessimistic locks on the Tier. I made this choice because simple quantity counters cannot inherently protect against two users implicitly booking the same physically situated asset if the business model decides seats are assigned. It also makes oversold bugs physically impossible since 1 unique row = 1 owner. If I'm wrong, the database grows significantly larger row-by-row for 50,000-seat stadiums compared to a single integer row.
 
