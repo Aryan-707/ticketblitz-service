@@ -54,15 +54,9 @@ public class StockService {
         Timer bookingLatencyTimer = meterRegistry.timer("ticketblitz_booking_latency_seconds");
         return bookingLatencyTimer.record(() -> {
 
-            // Mod 6: Idempotency safety. Let the DB constraint serve as the ultimate truth.
-        // We first do a SELECT here (and the DB unique constraint on idempotency_key is another safety net).
-        if (orderRepository.findByIdempotencyKey(idempotencyKey).isPresent()) {
-            System.out.println("🔄 Duplicate idempotent request ignored for user: " + userId);
-            return true;
-        }
-
-        // Mod 2/8/CircuitBreaker: Resilient atomic lock delegating completely to AOP fallback if SLOW/DOWN
-        if (!redisLockService.acquireSeatLock(seatId, userId)) {
+            // Mod 2/8/CircuitBreaker: Resilient atomic lock delegating completely to AOP fallback if SLOW/DOWN
+        String lockToken = java.util.UUID.randomUUID().toString(); // Token prevents cross-thread release
+        if (!redisLockService.acquireSeatLock(seatId, lockToken)) {
             System.out.println("❌ Lock already acquired for seat: " + seatId);
             meterRegistry.counter("ticketblitz_redis_lock_failure_total").increment();
             return false;
@@ -77,7 +71,8 @@ public class StockService {
                 throw new com.ticketblitz.backend.exception.SeatUnavailableException("Seat already booked in DB");
             }
             
-            seat.setStatus(com.ticketblitz.backend.model.SeatStatus.RESERVED);
+            // Transition: AVAILABLE -> HELD when lock acquired
+            seat.setStatus(com.ticketblitz.backend.model.SeatStatus.HELD); 
             seat.setReservedAt(LocalDateTime.now());
             seatRepository.save(seat);
 
@@ -109,6 +104,11 @@ public class StockService {
 
                 orderRepository.save(newOrder);
 
+                // Transition: HELD -> CONFIRMED upon successful booking save
+                seat.setStatus(com.ticketblitz.backend.model.SeatStatus.CONFIRMED);
+                seatRepository.save(seat);
+
+
                 // Publish Event asynchronously. Fire-and-forget logic so HTTP isn't blocked on slow SMTP
                 bookingEventProducer.publishConfirmation(
                         com.ticketblitz.backend.dto.BookingConfirmedEvent.builder()
@@ -131,10 +131,10 @@ public class StockService {
             }
 
         } catch (com.ticketblitz.backend.exception.SeatUnavailableException e) {
-            redisLockService.releaseLockSafely(seatId); // release immediately if seat taken
+            redisLockService.releaseLockSafely(seatId, lockToken); // release immediately if seat taken
             return false;
         } catch (Exception e) {
-            redisLockService.releaseLockSafely(seatId);
+            redisLockService.releaseLockSafely(seatId, lockToken);
             meterRegistry.counter("ticketblitz_booking_failure_total").increment();
             System.err.println("🚨 TRANSACTION ABORTED: " + e.getMessage());
             throw new RuntimeException("Database rejected the save. Redis lock released.", e);

@@ -30,10 +30,11 @@ public class ReservationCleanupJob {
     public void cleanupStrandedReservations() {
         // cleanup job filters by both — avoids full table scan
         LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(10);
-        List<Seat> expiredSeats = seatRepository.findByStatusAndReservedAtBefore(SeatStatus.RESERVED, expiryTime);
+        List<Seat> expiredSeats = seatRepository.findByStatusAndReservedAtBefore(SeatStatus.HELD, expiryTime);
 
         for (Seat seat : expiredSeats) {
             System.out.println("🧹 Cleaning up abandoned seat lock: " + seat.getId());
+            // Transition: Sweeper runs -> AVAILABLE
             seat.setStatus(SeatStatus.AVAILABLE);
             seat.setReservedAt(null);
             seatRepository.save(seat);

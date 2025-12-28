@@ -15,10 +15,10 @@ public class RedisLockService {
 
     // @CircuitBreaker prevents HikariCP DB pool exhaustion by short-circuiting fast if Redis stalls.
     @CircuitBreaker(name = "redisLock", fallbackMethod = "acquireLockFallback")
-    public boolean acquireSeatLock(Long seatId, String userId) {
+    public boolean acquireSeatLock(Long seatId, String token) {
         String lockKey = "seat:lock:" + seatId;
         // setIfAbsent fundamentally leverages atomic SET NX EX preventing crash-induced orphan locks
-        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, userId, 10, TimeUnit.MINUTES);
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey, token, 10, TimeUnit.MINUTES);
         return Boolean.TRUE.equals(acquired);
     }
 
@@ -28,9 +28,15 @@ public class RedisLockService {
         return true; 
     }
 
-    public void releaseLockSafely(Long seatId) {
+    public void releaseLockSafely(Long seatId, String token) {
         try {
-            redisTemplate.delete("seat:lock:" + seatId);
+            String lockKey = "seat:lock:" + seatId;
+            String luaScript = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+            redisTemplate.execute(
+                new org.springframework.data.redis.core.script.DefaultRedisScript<>(luaScript, Long.class),
+                java.util.Collections.singletonList(lockKey),
+                token
+            );
         } catch (Exception e) {
             // Ignore failure on cleanup during degraded mode
         }
