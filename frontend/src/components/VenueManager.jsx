@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState } from 'react';
 import axios from 'axios';
 import { 
@@ -59,13 +60,13 @@ const VenueManager = ({ venues, onRefresh }) => {
         try {
             if (editingVenue) {
                 // PATCH: Update existing infrastructure
-                await axios.put(`http://localhost:8080/api/venues/${editingVenue.id}`, payload, {
+                await axios.put(`${API_BASE_URL}/api/venues/${editingVenue.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("🔄 Infrastructure Patched Successfully!");
             } else {
                 // POST: Register new global infrastructure
-                await axios.post("http://localhost:8080/api/venues", payload, {
+                await axios.post("${API_BASE_URL}/api/venues", payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("🏟️ Infrastructure Successfully Registered!");
@@ -82,7 +83,7 @@ const VenueManager = ({ venues, onRefresh }) => {
         if (!window.confirm("🚨 Remove this infrastructure? This may affect active events.")) return;
         const token = localStorage.getItem("jwt_token");
         try {
-            await axios.delete(`http://localhost:8080/api/venues/${id}`, {
+            await axios.delete(`${API_BASE_URL}/api/venues/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             onRefresh();

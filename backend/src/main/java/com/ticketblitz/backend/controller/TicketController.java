@@ -78,7 +78,7 @@ public class TicketController {
 
         String userId = principal.getName().toLowerCase().trim();
 
-        // Mod 9: Rate limiting via Redis
+
         String rateLimitKey = "rate_limit:" + userId;
         Long reqCount = redisTemplate.opsForValue().increment(rateLimitKey);
         if (reqCount != null && reqCount == 1) {
@@ -89,7 +89,7 @@ public class TicketController {
             return ResponseEntity.status(429).body("Too many requests (Rate limit 5/min)");
         }
 
-        // Mod 11: MDC Logging
+
         MDC.put("bookingId", request.getIdempotencyKey());
         try {
             log.info("Processing purchase request: User={}, Event={}, Tier={}, Seat={}, IdempotencyKey={}",

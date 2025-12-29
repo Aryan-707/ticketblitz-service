@@ -30,7 +30,7 @@ public class Event {
     @JsonIgnoreProperties("event")
     private List<Order> orders; // This ensures orders vanish when the event is deleted
 
-    // Mod 2: Added seats relationship
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL,fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnoreProperties("event")
     private List<com.ticketblitz.backend.model.Seat> seats;

@@ -27,9 +27,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o")
     Double sumTotalRevenue();
 
-    // Mod 6: Idempotency safety
+
     Optional<Order> findByIdempotencyKey(String idempotencyKey);
 
-    // Mod 4: Ticket abandonment cleanup
+
     List<Order> findBySeatIdAndStatus(Long seatId, BookingStatus status);
 }

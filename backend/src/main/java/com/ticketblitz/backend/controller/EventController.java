@@ -39,7 +39,7 @@ public class EventController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Mod 2: Seat Map Read
+
     @GetMapping("/{id}/seats")
     public ResponseEntity<List<com.ticketblitz.backend.model.Seat>> getEventSeats(@PathVariable Long id) {
         // Seat map reads from DB with READ_COMMITTED natively in Postgres

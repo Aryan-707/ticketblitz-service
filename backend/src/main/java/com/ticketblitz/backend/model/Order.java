@@ -31,7 +31,7 @@ public class Order {
     @JsonIgnoreProperties({"orders", "ticketTiers", "seats"})
     private Event event;
 
-    // Mod 2: Individual Seat
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seat_id")
     @JsonIgnoreProperties({"orders", "event"})
@@ -42,12 +42,12 @@ public class Order {
     private double totalAmount; // The final price paid (Price * Quantity)
     private LocalDateTime orderTime;
 
-    // Mod 5: Booking status lifecycle
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus status;
 
-    // Mod 6: Idempotency Key
+
     @Column(name = "idempotency_key", unique = true)
     private String idempotencyKey;
 

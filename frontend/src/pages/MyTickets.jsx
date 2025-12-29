@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -72,7 +73,7 @@ const MyTickets = () => {
             if (!token) { navigate("/login"); return; }
 
             try {
-                const res = await axios.get(`http://localhost:8080/api/stock/my-tickets`, {
+                const res = await axios.get(`${API_BASE_URL}/api/stock/my-tickets`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTickets(res.data);

@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Star, Image as ImageIcon, X, MessageCircle, User, Send, Loader2, Link as LinkIcon, Camera, Maximize2, Plus, Trash2, Pencil } from 'lucide-react';
@@ -33,7 +34,7 @@ export default function PastEventsSection() {
         const fetchPast = async () => {
             const token = localStorage.getItem("jwt_token");
             try {
-                const res = await axios.get('http://localhost:8080/api/events', {
+                const res = await axios.get('${API_BASE_URL}/api/events', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
@@ -137,7 +138,7 @@ function ExperienceModal({ event, onClose }) {
         const fetchReviews = async () => {
             const token = localStorage.getItem("jwt_token");
             try {
-                const res = await axios.get(`http://localhost:8080/api/reviews/${event.id}`, {
+                const res = await axios.get(`${API_BASE_URL}/api/reviews/${event.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setReviews(res.data);
@@ -167,7 +168,7 @@ function ExperienceModal({ event, onClose }) {
         if (!window.confirm("Are you sure you want to delete this memory?")) return;
         const token = localStorage.getItem("jwt_token");
         try {
-            await axios.delete(`http://localhost:8080/api/reviews/${reviewId}`, {
+            await axios.delete(`${API_BASE_URL}/api/reviews/${reviewId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setReviews(reviews.filter(r => r.id !== reviewId));
@@ -211,7 +212,7 @@ function ExperienceModal({ event, onClose }) {
             let res;
             if (editingId) {
                 // UPDATE (PUT)
-                res = await axios.put(`http://localhost:8080/api/reviews/${editingId}`, payload, {
+                res = await axios.put(`${API_BASE_URL}/api/reviews/${editingId}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 // Update list locally
@@ -219,7 +220,7 @@ function ExperienceModal({ event, onClose }) {
                 setEditingId(null); // Exit edit mode
             } else {
                 // CREATE (POST)
-                res = await axios.post(`http://localhost:8080/api/reviews/${event.id}`, payload, {
+                res = await axios.post(`${API_BASE_URL}/api/reviews/${event.id}`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setReviews([res.data, ...reviews]);

@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -29,7 +30,7 @@ const TicketPage = () => {
     const fetchEventDetails = useCallback(async () => {
         try {
             const token = localStorage.getItem("jwt_token");
-            const res = await axios.get(`http://localhost:8080/api/events/${eventId}`, {
+            const res = await axios.get(`${API_BASE_URL}/api/events/${eventId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             const eventData = res.data;
@@ -48,7 +49,7 @@ const TicketPage = () => {
     }, [eventId, navigate]);
 
     const connectWebSocket = useCallback(() => {
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('${WS_BASE_URL}');
         const stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
@@ -101,7 +102,7 @@ const TicketPage = () => {
                 transactionId: `TXN_BLITZ_${Math.floor(100000 + Math.random() * 900000)}`
             };
 
-            await axios.post(`http://localhost:8080/api/stock/purchase`, payload, { 
+            await axios.post(`${API_BASE_URL}/api/stock/purchase`, payload, { 
                 headers: { Authorization: `Bearer ${token}` } 
             });
             

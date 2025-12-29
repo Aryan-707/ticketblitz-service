@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Image as ImageIcon, Link as LinkIcon, Plus, Trash2, Ticket, Clock, Camera, X } from 'lucide-react';
@@ -98,11 +99,11 @@ function AdminEventForm({ onClose, refreshData, initialData, venues }) {
 
             if (initialData && initialData.id) {
                 // UPDATE (PUT)
-                await axios.put(`http://localhost:8080/api/events/${initialData.id}`, finalData, config);
+                await axios.put(`${API_BASE_URL}/api/events/${initialData.id}`, finalData, config);
                 alert("✅ Experience Updated Successfully!");
             } else {
                 // CREATE (POST)
-                await axios.post('http://localhost:8080/api/events/create', finalData, config);
+                await axios.post('${API_BASE_URL}/api/events/create', finalData, config);
                 alert("🚀 Experience Launched!");
             }
             

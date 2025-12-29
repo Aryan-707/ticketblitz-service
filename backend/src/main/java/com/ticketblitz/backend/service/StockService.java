@@ -54,7 +54,7 @@ public class StockService {
         Timer bookingLatencyTimer = meterRegistry.timer("ticketblitz_booking_latency_seconds");
         return bookingLatencyTimer.record(() -> {
 
-            // Mod 2/8/CircuitBreaker: Resilient atomic lock delegating completely to AOP fallback if SLOW/DOWN
+
         String lockToken = java.util.UUID.randomUUID().toString(); // Token prevents cross-thread release
         if (!redisLockService.acquireSeatLock(seatId, lockToken)) {
             System.out.println("❌ Lock already acquired for seat: " + seatId);
@@ -89,7 +89,7 @@ public class StockService {
                 tier.setAvailableStock(remainingStock.intValue());
                 ticketTierRepository.save(tier);
 
-                // Mod 5: Booking status lifecycle (Starts as RESERVED)
+
                 Order newOrder = Order.builder()
                         .userId(userId)
                         .event(event)

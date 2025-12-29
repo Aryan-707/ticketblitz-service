@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -39,7 +40,7 @@ function AdminDashboard() {
         if (!token) return;
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get('http://localhost:8080/api/admin/partners', config);
+            const res = await axios.get('${API_BASE_URL}/api/admin/partners', config);
             setProposals(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Partner inquiry fetch failed", err);
@@ -52,7 +53,7 @@ function AdminDashboard() {
         if (!token) return;
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get('http://localhost:8080/api/admin/venues', config);
+            const res = await axios.get('${API_BASE_URL}/api/admin/venues', config);
             setVenues(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Venue infrastructure fetch failed", err);
@@ -65,7 +66,7 @@ function AdminDashboard() {
         if (!token) return;
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            const res = await axios.get('http://localhost:8080/api/events', config);
+            const res = await axios.get('${API_BASE_URL}/api/events', config);
             setEvents(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             console.error("Failed to fetch events", err);
@@ -78,13 +79,13 @@ function AdminDashboard() {
         if (!token) { navigate("/login"); return; }
         const config = { headers: { Authorization: `Bearer ${token}` } };
         try {
-            const statsRes = await axios.get('http://localhost:8080/api/admin/stats', config);
+            const statsRes = await axios.get('${API_BASE_URL}/api/admin/stats', config);
             setStats(statsRes.data);
             
-            const usersRes = await axios.get('http://localhost:8080/api/admin/users', config);
+            const usersRes = await axios.get('${API_BASE_URL}/api/admin/users', config);
             setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
             
-            const ordersRes = await axios.get('http://localhost:8080/api/admin/orders', config);
+            const ordersRes = await axios.get('${API_BASE_URL}/api/admin/orders', config);
             setOrders(Array.isArray(ordersRes.data) ? ordersRes.data : []);
             
             await fetchEvents();
@@ -108,7 +109,7 @@ function AdminDashboard() {
         const token = getToken();
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.put(`http://localhost:8080/api/admin/partners/${proposalId}/status`, 
+            await axios.put(`${API_BASE_URL}/api/admin/partners/${proposalId}/status`, 
                 { status: newStatus }, config);
             fetchProposals(); // Refresh registry
         } catch (err) {
@@ -120,7 +121,7 @@ function AdminDashboard() {
         if(!window.confirm("🚨 Force-sync Redis with PostgreSQL Source of Truth?")) return;
         const token = getToken();
         try {
-            await axios.post('http://localhost:8080/api/admin/sync-stock', {}, {
+            await axios.post('${API_BASE_URL}/api/admin/sync-stock', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert("Global Inventory Synchronized Successfully!");
@@ -135,7 +136,7 @@ function AdminDashboard() {
         if(!window.confirm("Delete this user permanently?")) return;
         const token = getToken();
         try {
-            await axios.delete(`http://localhost:8080/api/admin/users/${userId}`, {
+            await axios.delete(`${API_BASE_URL}/api/admin/users/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchData(); 
@@ -149,7 +150,7 @@ function AdminDashboard() {
         const token = getToken();
         try {
             const config = { headers: { Authorization: `Bearer ${token}` } };
-            await axios.delete(`http://localhost:8080/api/events/${eventId}`, config);
+            await axios.delete(`${API_BASE_URL}/api/events/${eventId}`, config);
             fetchData(); 
         } catch (error) {
             console.error("Event deletion failed", error);

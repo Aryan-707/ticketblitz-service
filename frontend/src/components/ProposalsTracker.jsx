@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Clock, CheckCircle, XCircle, FileText, MapPin, RefreshCcw, Loader2 } from 'lucide-react';
@@ -36,7 +37,7 @@ export default function ProposalsTracker() {
              * Queries the backend for proposals associated with the logged-in email.
              */
             const res = await axios.get(
-                `http://localhost:8080/api/partners/my-proposals?email=${userEmail}`, 
+                `${API_BASE_URL}/api/partners/my-proposals?email=${userEmail}`, 
                 config
             );
             

@@ -24,7 +24,7 @@ public class BackendApplication {
 
     @EventListener(ApplicationReadyEvent.class)
     public void setupIndexes() {
-        // Mod 3 & 7: DB Constraints & Indexes
+
         
         // Ensure atomic uniqueness of confirmed bookings per seat
         // This acts as the final safety net preventing double booking

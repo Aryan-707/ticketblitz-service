@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -50,7 +51,7 @@ export default function PartnerWithUs() {
             };
 
             // SECURE TRANSMISSION to PostgreSQL Registry
-            await axios.post("http://localhost:8080/api/partners/apply", payload);
+            await axios.post("${API_BASE_URL}/api/partners/apply", payload);
             
             setSuccess(true);
             setRefreshTrigger(prev => prev + 1); // ATOMIC SYNC: Refreshes registry below immediately

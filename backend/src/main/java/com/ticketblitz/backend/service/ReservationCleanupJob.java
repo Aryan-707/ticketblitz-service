@@ -23,7 +23,7 @@ public class ReservationCleanupJob {
     private final StringRedisTemplate redisTemplate;
     private final WaitlistService waitlistService;
 
-    // Mod 4: Scheduled job every 2 mins to run abandonment cleanup
+
     @Scheduled(fixedRate = 120000)
     @net.javacrumbs.shedlock.spring.annotation.SchedulerLock(name = "reservationSweeper", lockAtMostFor = "1m", lockAtLeastFor = "30s")
     @Transactional

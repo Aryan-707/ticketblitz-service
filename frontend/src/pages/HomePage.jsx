@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "../api/config";
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,7 +22,7 @@ const HomePage = ({ searchQuery = "", onSearch, activeCategory = "All" }) => {
         const fetchEvents = async () => {
             const token = localStorage.getItem("jwt_token");
             try {
-                const res = await axios.get('http://localhost:8080/api/events', {
+                const res = await axios.get('${API_BASE_URL}/api/events', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.data && Array.isArray(res.data)) {

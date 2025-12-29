@@ -1,3 +1,4 @@
+import { API_BASE_URL, WS_BASE_URL } from "./api/config";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +26,7 @@ export default function Register() {
 
     try {
       // REGISTRATION HANDSHAKE
-      await axios.post("http://localhost:8080/api/auth/register", formData);
+      await axios.post("${API_BASE_URL}/api/auth/register", formData);
       
       // SUCCESS REDIRECTION: Standard practice to force login for security verification
       navigate("/login", { state: { message: "Account created! Secure your session below." } });
