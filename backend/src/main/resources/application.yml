@@ -7,8 +7,12 @@ spring:
     password: ${DB_PASSWORD:password}
     hikari:
       # hikari pool size tuned for free tier DB limits
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: 20 # supports ~200 concurrent transactions assuming avg 100ms transaction time
+      minimum-idle: 5 # keeps connections warm preventing cold-start lag during flash sales
+      connection-timeout: 3000 # fail fast if DB is unreachable, avoiding ghost threads
+      idle-timeout: 600000 
+      max-lifetime: 1800000 # cycles connections safely preventing stale DB sessions
+      leak-detection-threshold: 5000 # flags long-running uncommitted queries strictly
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,7 +22,20 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
-
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false # manual ack for reliability
+      max-poll-records: 10 # backpressure control avoiding memory flood
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 application:
   security:
     jwt:
@@ -38,31 +55,7 @@ management:
     prometheus:
       enabled: true
 
-spring:
-  datasource:
-    hikari:
-      maximum-pool-size: 20 # supports ~200 concurrent transactions assuming avg 100ms transaction time
-      minimum-idle: 5 # keeps connections warm preventing cold-start lag during flash sales
-      connection-timeout: 3000 # fail fast if DB is unreachable, avoiding ghost threads
-      idle-timeout: 600000 
-      max-lifetime: 1800000 # cycles connections safely preventing stale DB sessions
-      leak-detection-threshold: 5000 # flags long-running uncommitted queries strictly
 
-spring:
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      group-id: notification-service-group
-      auto-offset-reset: earliest
-      enable-auto-commit: false # manual ack for reliability
-      max-poll-records: 10 # backpressure control avoiding memory flood
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
 
 resilience4j.circuitbreaker:
   instances:
