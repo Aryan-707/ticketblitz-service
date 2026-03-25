@@ -38,5 +38,4 @@ services:
 databases:
   - name: ticketblitz-db
     databaseName: ticketing_db
-    user: postgres
     plan: free
