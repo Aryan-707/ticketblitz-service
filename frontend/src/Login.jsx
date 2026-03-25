@@ -29,7 +29,7 @@ export default function Login() {
       const response = await axios.post(`${API_BASE_URL}/api/auth/authenticate`, { 
           email, 
           password 
-      });
+      }, { timeout: 8000 });
 
       const { token, role, name } = response.data;
 
@@ -41,15 +41,18 @@ export default function Login() {
       window.location.href = "/home";
       
     } catch (err) {
-      // THE FIX: Extraction Logic
-      // We check if it's an object with a 'message' key, otherwise fallback to a string.
-      const backendError = err.response?.data;
-      const extractedMessage = (typeof backendError === 'object' && backendError !== null)
-        ? backendError.message 
-        : (typeof backendError === 'string' ? backendError : "Invalid credentials. Please try again.");
+      let extractedMessage;
+      if (err.code === 'ECONNABORTED' || !err.response) {
+        extractedMessage = "Backend service is starting up. Please try again in a moment.";
+      } else {
+        const backendError = err.response?.data;
+        extractedMessage = (typeof backendError === 'object' && backendError !== null)
+          ? backendError.message 
+          : (typeof backendError === 'string' ? backendError : "Invalid credentials. Please try again.");
+      }
 
       setError(extractedMessage);
-      console.error("Secure Bridge Handshake Failure:", extractedMessage);
+      console.error("Auth handshake failure:", extractedMessage);
     } finally {
       setIsSubmitting(false);
     }

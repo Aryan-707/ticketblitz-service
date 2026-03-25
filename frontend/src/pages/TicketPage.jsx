@@ -49,7 +49,7 @@ const TicketPage = () => {
     }, [eventId, navigate]);
 
     const connectWebSocket = useCallback(() => {
-        const socket = new SockJS('${WS_BASE_URL}');
+        const socket = new SockJS(`${WS_BASE_URL}`);
         const stompClient = Stomp.over(socket);
         stompClient.debug = null;
 

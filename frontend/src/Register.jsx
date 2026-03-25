@@ -25,16 +25,20 @@ export default function Register() {
     setError("");
 
     try {
-      // REGISTRATION HANDSHAKE
-      await axios.post(`${API_BASE_URL}/api/auth/register`, formData);
+      await axios.post(`${API_BASE_URL}/api/auth/register`, formData, { timeout: 8000 });
       
-      // SUCCESS REDIRECTION: Standard practice to force login for security verification
       navigate("/login", { state: { message: "Account created! Secure your session below." } });
     } catch (err) {
-      // OPTIMAL ERROR CAPTURE: Replaces invasive alert() popups
-      const msg = err.response?.data || "Registration failed. This email may already be in use.";
+      let msg;
+      if (err.code === 'ECONNABORTED' || !err.response) {
+        msg = "Backend service is starting up. Please try again in a moment.";
+      } else {
+        const backendError = err.response?.data;
+        msg = (typeof backendError === 'object' && backendError !== null)
+          ? backendError.message
+          : (typeof backendError === 'string' ? backendError : "Registration failed. This email may already be in use.");
+      }
       setError(msg);
-      console.error("Infrastructure Handshake Failure:", msg);
     } finally {
       setIsSubmitting(false);
     }

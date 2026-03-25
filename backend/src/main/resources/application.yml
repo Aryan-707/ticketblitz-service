@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   application:
     name: TicketBlitz
@@ -6,13 +9,12 @@ spring:
     username: ${DB_USERNAME:ticketing_db_s59y_user}
     password: ${DB_PASSWORD:password}
     hikari:
-      # hikari pool size tuned for free tier DB limits
-      maximum-pool-size: ${HIKARI_MAX_POOL:20}
-      minimum-idle: ${HIKARI_MIN_IDLE:5}
-      connection-timeout: ${HIKARI_CONN_TIMEOUT:3000}
+      maximum-pool-size: ${HIKARI_MAX_POOL:5}
+      minimum-idle: ${HIKARI_MIN_IDLE:2}
+      connection-timeout: ${HIKARI_CONN_TIMEOUT:5000}
       idle-timeout: 600000 
-      max-lifetime: 1800000 # cycles connections safely preventing stale DB sessions
-      leak-detection-threshold: 5000 # flags long-running uncommitted queries strictly
+      max-lifetime: 1800000
+      leak-detection-threshold: 5000
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -35,12 +37,19 @@ spring:
     consumer:
       group-id: notification-service-group
       auto-offset-reset: earliest
-      enable-auto-commit: false # manual ack for reliability
-      max-poll-records: 10 # backpressure control avoiding memory flood
+      enable-auto-commit: false
+      max-poll-records: 10
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+  autoconfigure:
+    exclude:
+      - ${KAFKA_AUTOCONFIGURE_EXCLUDE:}
+
+kafka:
+  enabled: ${KAFKA_ENABLED:false}
+
 application:
   security:
     jwt:
@@ -60,12 +69,10 @@ management:
     prometheus:
       enabled: true
 
-
-
 resilience4j.circuitbreaker:
   instances:
     redisLock:
       slidingWindowSize: 10
-      failureRateThreshold: 30 # circuit opens after 3 failures in 10s window (30%)
-      waitDurationInOpenState: 10000 # 10s open state bypasses Redis automatically
+      failureRateThreshold: 30
+      waitDurationInOpenState: 10000
       permittedNumberOfCallsInHalfOpenState: 3
