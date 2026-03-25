@@ -24,5 +24,11 @@ services:
         value: "false"
       - key: SPRING_AUTOCONFIGURE_EXCLUDE
         value: "org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration"
+      - key: HIKARI_MAX_POOL
+        value: "3"
+      - key: HIKARI_MIN_IDLE
+        value: "1"
+      - key: HIKARI_CONN_TIMEOUT
+        value: "10000"
       - key: JWT_SECRET
         generateValue: true

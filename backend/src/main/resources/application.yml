@@ -7,9 +7,9 @@ spring:
     password: ${DB_PASSWORD:password}
     hikari:
       # hikari pool size tuned for free tier DB limits
-      maximum-pool-size: 20 # supports ~200 concurrent transactions assuming avg 100ms transaction time
-      minimum-idle: 5 # keeps connections warm preventing cold-start lag during flash sales
-      connection-timeout: 3000 # fail fast if DB is unreachable, avoiding ghost threads
+      maximum-pool-size: ${HIKARI_MAX_POOL:20}
+      minimum-idle: ${HIKARI_MIN_IDLE:5}
+      connection-timeout: ${HIKARI_CONN_TIMEOUT:3000}
       idle-timeout: 600000 
       max-lifetime: 1800000 # cycles connections safely preventing stale DB sessions
       leak-detection-threshold: 5000 # flags long-running uncommitted queries strictly
