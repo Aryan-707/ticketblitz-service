@@ -22,7 +22,7 @@ const HomePage = ({ searchQuery = "", onSearch, activeCategory = "All" }) => {
         const fetchEvents = async () => {
             const token = localStorage.getItem("jwt_token");
             try {
-                const res = await axios.get('${API_BASE_URL}/api/events', {
+                const res = await axios.get(`${API_BASE_URL}/api/events`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.data && Array.isArray(res.data)) {

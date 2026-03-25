@@ -103,7 +103,7 @@ function AdminEventForm({ onClose, refreshData, initialData, venues }) {
                 alert("✅ Experience Updated Successfully!");
             } else {
                 // CREATE (POST)
-                await axios.post('${API_BASE_URL}/api/events/create', finalData, config);
+                await axios.post(`${API_BASE_URL}/api/events/create`, finalData, config);
                 alert("🚀 Experience Launched!");
             }
             

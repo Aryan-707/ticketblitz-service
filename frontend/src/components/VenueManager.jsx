@@ -66,7 +66,7 @@ const VenueManager = ({ venues, onRefresh }) => {
                 alert("🔄 Infrastructure Patched Successfully!");
             } else {
                 // POST: Register new global infrastructure
-                await axios.post("${API_BASE_URL}/api/venues", payload, {
+                await axios.post(`${API_BASE_URL}/api/venues`, payload, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 alert("🏟️ Infrastructure Successfully Registered!");

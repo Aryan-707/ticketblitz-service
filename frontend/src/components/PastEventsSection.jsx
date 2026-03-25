@@ -34,7 +34,7 @@ export default function PastEventsSection() {
         const fetchPast = async () => {
             const token = localStorage.getItem("jwt_token");
             try {
-                const res = await axios.get('${API_BASE_URL}/api/events', {
+                const res = await axios.get(`${API_BASE_URL}/api/events`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 

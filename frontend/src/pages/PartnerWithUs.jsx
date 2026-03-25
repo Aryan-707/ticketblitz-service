@@ -51,7 +51,7 @@ export default function PartnerWithUs() {
             };
 
             // SECURE TRANSMISSION to PostgreSQL Registry
-            await axios.post("${API_BASE_URL}/api/partners/apply", payload);
+            await axios.post(`${API_BASE_URL}/api/partners/apply`, payload);
             
             setSuccess(true);
             setRefreshTrigger(prev => prev + 1); // ATOMIC SYNC: Refreshes registry below immediately

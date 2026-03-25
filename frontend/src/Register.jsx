@@ -26,7 +26,7 @@ export default function Register() {
 
     try {
       // REGISTRATION HANDSHAKE
-      await axios.post("${API_BASE_URL}/api/auth/register", formData);
+      await axios.post(`${API_BASE_URL}/api/auth/register`, formData);
       
       // SUCCESS REDIRECTION: Standard practice to force login for security verification
       navigate("/login", { state: { message: "Account created! Secure your session below." } });
