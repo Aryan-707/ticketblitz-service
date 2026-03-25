@@ -15,8 +15,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import net.javacrumbs.shedlock.provider.redis.spring.RedisLockProvider;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @Configuration
+@EnableAsync
 @RequiredArgsConstructor
 @EnableSchedulerLock(defaultLockAtMostFor = "1m")
 public class ApplicationConfig {
