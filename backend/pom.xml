@@ -121,7 +121,10 @@
         </dependency>
 
         <!-- Kafka for async async booking notifications without blocking the HTTP thread -->
-        
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
 
         <!-- Resilience4j: Circuit Breaker pattern preventing HikariCP thread exhaustion when Redis degrades -->
         <dependency>
@@ -197,4 +200,3 @@
 	</build>
 
 </project>
-

@@ -24,9 +24,13 @@ services:
         sync: false
       - key: REDIS_PASSWORD
         sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
         sync: false
+      - key: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
         value: SASL_SSL
+      - key: SPRING_KAFKA_PROPERTIES_SASL_MECHANISM
         value: SCRAM-SHA-256
+      - key: SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG
         sync: false
       - key: JWT_SECRET
         generateValue: true

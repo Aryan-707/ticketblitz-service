@@ -17,7 +17,6 @@ import net.javacrumbs.shedlock.provider.redis.spring.RedisLockProvider;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 @Configuration
-@org.springframework.scheduling.annotation.EnableAsync
 @RequiredArgsConstructor
 @EnableSchedulerLock(defaultLockAtMostFor = "1m")
 public class ApplicationConfig {
@@ -55,4 +54,3 @@ public class ApplicationConfig {
         return new RedisLockProvider(connectionFactory, "ticketblitz_cron_locks");
     }
 }
-

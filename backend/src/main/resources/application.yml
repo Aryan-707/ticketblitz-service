@@ -22,6 +22,20 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false # manual ack for reliability
+      max-poll-records: 10 # backpressure control avoiding memory flood
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
 application:
   security:
     jwt:
@@ -50,4 +64,3 @@ resilience4j.circuitbreaker:
       failureRateThreshold: 30 # circuit opens after 3 failures in 10s window (30%)
       waitDurationInOpenState: 10000 # 10s open state bypasses Redis automatically
       permittedNumberOfCallsInHalfOpenState: 3
-
