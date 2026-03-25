@@ -47,13 +47,18 @@ public class BackendApplication {
             System.out.println("---------------------------------------");
             System.out.println("⚡ TESTING REDIS CONNECTION...");
 
-            // 1. Try to write to Redis
-            redisTemplate.opsForValue().set("test_key", "TicketBlitz is Live!");
+            try {
+                // 1. Try to write to Redis
+                redisTemplate.opsForValue().set("test_key", "TicketBlitz is Live!");
 
-            // 2. Try to read from Redis
-            String value = redisTemplate.opsForValue().get("test_key");
+                // 2. Try to read from Redis
+                String value = redisTemplate.opsForValue().get("test_key");
 
-            System.out.println("⚡ REDIS RESPONSE: " + value);
+                System.out.println("⚡ REDIS RESPONSE: " + value);
+            } catch (Exception e) {
+                System.err.println("⚠️ Redis connection test failed (non-fatal): " + e.getMessage());
+                System.out.println("⚡ App will continue without initial Redis test. Redis will reconnect lazily.");
+            }
             System.out.println("---------------------------------------");
         };
     }
