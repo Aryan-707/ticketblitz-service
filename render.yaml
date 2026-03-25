@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: ticketblitz-backend
+    env: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DB_URL
+        fromDatabase:
+          name: ticketblitz-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: ticketblitz-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ticketblitz-db
+          property: password
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: KAFKA_BOOTSTRAP_SERVERS
+        sync: false
+      - key: SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL
+        value: SASL_SSL
+      - key: SPRING_KAFKA_PROPERTIES_SASL_MECHANISM
+        value: SCRAM-SHA-256
+      - key: SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  - name: ticketblitz-db
+    databaseName: ticketing_db
+    user: postgres
+    plan: free
