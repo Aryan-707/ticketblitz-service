@@ -47,7 +47,13 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        
+        String corsEnv = System.getenv("CORS_ALLOWED_ORIGINS");
+        if (corsEnv != null && !corsEnv.isEmpty()) {
+            configuration.setAllowedOrigins(java.util.Arrays.asList(corsEnv.split(",")));
+        } else {
+            configuration.setAllowedOrigins(List.of("http://localhost:5173", "https://ticketblitz-service.vercel.app"));
+        }
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
