@@ -25,7 +25,7 @@ export default function Register() {
     setError("");
 
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/register`, formData, { timeout: 8000 });
+      await axios.post(`${API_BASE_URL}/api/auth/register`, formData, { timeout: 60000 });
       
       navigate("/login", { state: { message: "Account created! Secure your session below." } });
     } catch (err) {

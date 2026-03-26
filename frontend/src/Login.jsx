@@ -29,7 +29,7 @@ export default function Login() {
       const response = await axios.post(`${API_BASE_URL}/api/auth/authenticate`, { 
           email, 
           password 
-      }, { timeout: 8000 });
+      }, { timeout: 60000 });
 
       const { token, role, name } = response.data;
 
