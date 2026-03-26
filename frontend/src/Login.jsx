@@ -2,7 +2,7 @@ import { API_BASE_URL, WS_BASE_URL } from "./api/config";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, ChevronRight, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ChevronRight, AlertCircle, ExternalLink } from 'lucide-react';
 
 /**
  * Fixed to handle structured JSON error objects from Spring Boot without crashing.
@@ -58,6 +58,31 @@ export default function Login() {
     }
   };
 
+  const handleDemoLogin = (e) => {
+    e.preventDefault();
+    setEmail("recruiter@ticketblitz.com");
+    setPassword("TicketBlitz123!");
+    // Need a tiny delay to allow state to update before submitting
+    setTimeout(() => {
+        setIsSubmitting(true);
+        setError("");
+        axios.post(`${API_BASE_URL}/api/auth/authenticate`, {
+            email: "recruiter@ticketblitz.com",
+            password: "TicketBlitz123!"
+        }, { timeout: 60000 }).then(response => {
+            const { token, role, name } = response.data;
+            localStorage.setItem("jwt_token", token);
+            localStorage.setItem("user_email", "recruiter@ticketblitz.com");
+            localStorage.setItem("user_name", name);
+            localStorage.setItem("user_role", role || "USER");
+            window.location.href = "/home";
+        }).catch(err => {
+            setError("Demo backend is starting up. Please try again in 30 seconds.");
+            setIsSubmitting(false);
+        });
+    }, 100);
+  };
+
   return (
     <div style={authWrapper}>
       <div style={{...authCard, border: error ? '1px solid #ffeded' : '1px solid transparent'}}>
@@ -109,11 +134,26 @@ export default function Login() {
             {isSubmitting ? "⚡ SECURING ACCESS..." : "SIGN IN"}
             {!isSubmitting && <ChevronRight size={18} />}
           </button>
+          
+          <button 
+            type="button" 
+            onClick={handleDemoLogin}
+            disabled={isSubmitting}
+            style={demoBtn}
+          >
+            🚀 One-Click Recruiter Demo
+          </button>
         </form>
 
         <p style={footerLinkText}>
           New to TicketBlitz? <span onClick={() => navigate("/register")} style={linkBtn}>Create Account</span>
         </p>
+
+        <div style={swaggerBox}>
+          <a href={`${API_BASE_URL}/swagger-ui/index.html`} target="_blank" rel="noopener noreferrer" style={swaggerLink}>
+            <ExternalLink size={14} style={{ marginRight: '5px' }}/> View Live API Docs (Swagger)
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -135,3 +175,7 @@ const toggleIcon = { position: 'absolute', right: '15px', cursor: 'pointer', col
 const submitBtn = { padding: '18px', background: '#000', color: '#fff', border: 'none', borderRadius: '16px', cursor: 'pointer', fontWeight: '800', fontSize: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '10px' };
 const footerLinkText = { marginTop: '30px', fontSize: '14px', color: '#666' };
 const linkBtn = { color: "#6f42c1", fontWeight: "800", cursor: "pointer", marginLeft: '5px' };
+
+const demoBtn = { padding: '16px', background: '#f3ebff', color: '#6f42c1', border: '1px solid #e0c8ff', borderRadius: '16px', cursor: 'pointer', fontWeight: '800', fontSize: '13px', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: '0.2s' };
+const swaggerBox = { marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee' };
+const swaggerLink = { display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: '12px', textDecoration: 'none', fontWeight: '600' };

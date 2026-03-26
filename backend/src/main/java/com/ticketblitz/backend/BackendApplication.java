@@ -10,6 +10,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.ticketblitz.backend.repository.UserRepository;
+import com.ticketblitz.backend.model.User;
+import com.ticketblitz.backend.model.Role;
 
 @SpringBootApplication
 @EnableScheduling
@@ -60,6 +64,23 @@ public class BackendApplication {
                 System.out.println("⚡ App will continue without initial Redis test. Redis will reconnect lazily.");
             }
             System.out.println("---------------------------------------");
+        };
+    }
+
+    @Bean
+    CommandLineRunner seedDemoUser(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        return args -> {
+            if (userRepository.findByEmail("recruiter@ticketblitz.com").isEmpty()) {
+                System.out.println("⚡ SEEDING DEMO RECRUITER ACCOUNT...");
+                User demoUser = User.builder()
+                        .name("Jane Recruiter")
+                        .email("recruiter@ticketblitz.com")
+                        .password(passwordEncoder.encode("TicketBlitz123!"))
+                        .role(Role.ADMIN)
+                        .build();
+                userRepository.save(demoUser);
+                System.out.println("✅ Demo account created: recruiter@ticketblitz.com");
+            }
         };
     }
 }
